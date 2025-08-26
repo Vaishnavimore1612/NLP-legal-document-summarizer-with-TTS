@@ -1,0 +1,13 @@
+# Core dependencies
+streamlit
+transformers
+torch
+sentencepiece
+gTTS
+googletrans==4.0.0-rc1
+
+# Optional but useful for legal document processing
+pandas
+openpyxl         # Excel read/write support
+PyPDF2           # Extract text from PDFs
+python-docx      # Extract text from Word documents (.docx)
