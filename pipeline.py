@@ -1,19 +1,57 @@
-from summarizer import summarize_text  #type:ignore
-from simplifier import simplify_text   #type:ignore
-from translation import translate_text #type:ignore
-from gtts import text_to_speech
+from transformers import pipeline
+from gtts import gTTS
+import os
 
-def process_document(input_text, task="summarize", target_lang="hi", with_audio=False):
-    if task == "summarize":
-        english_output = summarize_text(input_text)
-    else:
-        english_output = simplify_text(input_text)
 
-    translated_output = translate_text(english_output, target_lang)
+# ---------------- Summarization ----------------
+def summarize_text(text: str, max_length: int = 130, min_length: int = 30) -> str:
+    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+    summary = summarizer(
+        text,
+        max_length=max_length,
+        min_length=min_length,
+        do_sample=False
+    )
+    return summary[0]['summary_text']
 
-    audio_file = None
-    if with_audio:
-        audio_file = text_to_speech(translated_output, target_lang)
 
-    return english_output, translated_output, audio_file
+# ---------------- Text-to-Speech ----------------
+def text_to_speech(text: str, filename: str = "output.mp3") -> str:
+    tts = gTTS(text=text, lang="en")
+    tts.save(filename)
+    return filename
+
+
+# ---------------- Main Pipeline ----------------
+def run_pipeline(text: str, enable_tts: bool = True) -> dict:
+    """
+    Runs summarization and (optional) TTS.
+    Returns dictionary with summary and audio path (if generated).
+    """
+    result = {}
+
+    # Summarize
+    summary = summarize_text(text)
+    result["summary"] = summary
+
+    # TTS
+    if enable_tts:
+        audio_file = text_to_speech(summary, "summary_audio.mp3")
+        result["audio_file"] = audio_file
+
+    return result
+
+
+# ---------------- Local Testing ----------------
+if __name__ == "__main__":
+    sample_text = """
+    This Agreement is entered into by and between Party A and Party B, 
+    with the intention of establishing mutual obligations, rights, and duties.
+    The Agreement shall remain in effect until terminated by either party with prior notice.
+    """
+    output = run_pipeline(sample_text, enable_tts=True)
+    print("Summary:", output["summary"])
+    if "audio_file" in output:
+        print("Audio file saved at:", output["audio_file"])
+
 
